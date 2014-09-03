@@ -1,0 +1,45 @@
+body, html {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
+	font-size: 19px;
+	font-weight: bold;
+	color: #fff
+}
+
+body.desktop {
+	background: url(../img/IPhone_5.png) center center no-repeat;
+}
+
+body.desktop img {
+	-webkit-user-drag: none
+}
+
+body.desktop #wrapper {
+	position: absolute;
+	width: 320px;
+	height: 548px;
+	top: 50%;
+	left: 50%;
+	margin-top: -259px;
+	margin-left: -160px;
+	padding-left : 0px;
+}
+
+#wrapper li {
+	list-style: none;
+	width : 320px;
+	height : 62px;
+	background-color: red;
+	display: table-cell;
+        	vertical-align: middle;
+}
+
+.inner {
+	text-align: center;	
+}
+
+.hiddenMaker {
+	
+}
