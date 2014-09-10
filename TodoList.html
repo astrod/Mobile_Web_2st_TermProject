@@ -1,41 +1,250 @@
+<!-- 
+구현기능 : 	리스트를 삽입한다.
+		플리킹
+		리스트를 삭제한다.
+-->
+
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Mobile Web Project</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
-		<!-- 모바일 사파리에서 풀 스크린으로 시작한다.-->
-		<meta name="apple-mobile-web-app-capable" content="yes">
-		<!--  기본적으로 아이폰이 처리하는 UI값이 되지 않는다(즉 모서리가 둥글고, 반원형의 밝은 부분을 추가하지 않게 된다. -->
- 		<link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
-		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen"> 
-	</head>
-	<body class="desktop">
+<head>
+	<title>Mobile Web Project</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+	<!-- 모바일 사파리에서 풀 스크린으로 시작한다.-->
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<!--  기본적으로 아이폰이 처리하는 UI값이 되지 않는다(즉 모서리가 둥글고, 반원형의 밝은 부분을 추가하지 않게 된다. -->
+	<link rel="apple-touch-icon-precomposed" href="apple-touch-icon-precomposed.png">
+	<script type="text/javascript" src="underscore.js"></script>
+	<style type="text/css">
+	body{
+		margin: 0px;
+	}
+	#wrapper{
+		overflow: hidden;
+	}
+	#vail {
+		height: 518px;
+		display: inline;
+		position: absolute;
+		width: 100%;
+		background-color: black;
+		top: 55px;
+		z-index: 100;
+		display: none;
+		opacity: 0.5;
+	}
+	ul{
+		padding: 0px;
+		margin: 0px;
+		position: relative;
+		top : -55px;
+	}
+	li {
+		position: relative;
+		left : 0px;
+		width : 100%;
+		height: 50px;
+		list-style: none;
+		opacity: 1;
+		-webkit-transition-property:opacity; 
+   		-webkit-transition-duration:1s;
+		transition-property:opacity;
+		transition-duration:1s; 
+	}
+	input {
+		width : 100%;
+		height: 50px;
+	}
+	.red{
+		background-color: red;
+	}
+	.green{
+		background-color: green;
+	}
+	.blue{
+		background-color: blue;
+	}
+	.yellow{
+		background-color: yellow;
+	}
+	.gold{
+		background-color: gold;
+	}
+	.black{
+		background-color: black;
+	}
+	.input {
+		top : -50px;
+		background-color: green;
+	}
+	</style>
 
-		<ul id="wrapper">
-			<div class="hiddenMaker">
-				<li class="">
-					<div class="inner">
-						<label>text</label>
-					</div>
-				</li>
-			</div>	
-			
+</head>
+<body class="desktop">
+	<div id="vail"></div>
+	<div id="wrapper">
+		<ul id="content">
+			<input type="text">
+			<li class="red"></li>
+			<li class="green"></li>
+			<li class="blue"></li>
+			<li class="yellow"></li>
+			<li class="gold"></li>
+			<li class="black"></li>
+			<li class="red"></li>
+			<li class="green"></li>
+			<li class="blue"></li>
+			<li class="yellow"></li>
+			<li class="gold"></li>
+			<li class="black"></li>
+			<li class="red"></li>
+			<li class="green"></li>
+			<li class="blue"></li>
 		</ul>
+	</div>
 
-		<script src="js/zepto.js"></script>
-		<script src="js/main.js"></script>
-		<script src="js/client.js"></script>
-		<script src="js/db.js"></script>
-		<script src="js/touch.js"></script>
-		<script src="js/item.js"></script>
-		<script src="js/unfold-dummy.js"></script>
-		<script src="js/collection.js"></script>
-		<script src="js/list-collection.js"></script>
-		<script src="js/list-item.js"></script>
-		<script src="js/todo-collection.js"></script>
-		<script src="js/todo-item.js"></script>
-		<!-- MIN -->
 
-	</body>
+	<script type="templete" id="templete">
+		<li class="gold" style="opacity : 0"> <%= value %> </li>
+	</script>
+
+	<script type="text/javascript">
+	
+	Math.degrees = function(radians) {
+  		return radians * 180 / Math.PI;
+	};
+
+	var Flicking = {
+		"init" : function(){
+			this.index = 0;
+			this.width = window.innerWidth;
+			this.halfWidth = this.width/2;
+			this.currentLeft = 0;
+			this.container = document.querySelector("#wrapper ul");
+			this.vail = document.querySelector("#vail");
+			this.fittingContent(this.width, window.innerHeight);
+			this.eventBind();
+			this.deleteFlag = null;
+			this.startX = 0;
+			this.curY = 0;
+			this.curX = 0;
+			this.requestId = null;
+			this.movedDistanceForX = 0;
+			this.movedDistanceForY = 0;
+			this.ENTER = 13;
+			this.deleteTodo = null;
+			this.inputSection = document.querySelector("#content > input");
+		},
+		"fittingContent" : function(width,height){
+			var style = document.createElement('style');
+			style.type = 'text/css';
+			
+			var str = '#wrapper { height: '+height+'px; }'+
+					  'ul { width: '+(width*5)+'px; }'+
+					  'ul li { width: '+width+'px; }';
+			style.innerHTML = str;
+			document.getElementsByTagName('head')[0].appendChild(style);
+		},
+		"eventBind":function(){
+			this.container.addEventListener("touchstart",this.touchstart.bind(this));
+			this.container.addEventListener("touchmove",this.touchmove.bind(this));
+			this.container.addEventListener("touchend",this.touchend.bind(this));
+			document.querySelector("#content > input").addEventListener("keydown", this.addList.bind(this));
+		},
+		"touchstart" : function(e){
+			this.startX = e.changedTouches[0].clientX;
+			this.curX = e.changedTouches[0].clientX; 
+			this.curY = e.changedTouches[0].clientY; 
+			this.requestId = requestAnimationFrame(this.moveDiv.bind(this));
+		},
+
+		//터치가 너무 예민함. 마우스로 해서 그런지 검증이 필요함. 서버에 올려놓고 테스트해야 함.
+		"touchmove" : function(e){
+   		    e.preventDefault(); 
+   		    var degree = this.culculatingDegree(this.curX, this.curY, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+   		    if(degree > 50 && degree < 130) {
+   		    	if(this.deleteFlag === null) this.deleteFlag = true;
+   		    	this.deleteTodo = e.target;
+   		    	this.movedDistanceForX = this.curX - e.changedTouches[0].clientX;
+   		    	if((e.changedTouches[0].clientX - this.startX) > 150) {
+   		    		this.deleteLi(e.target);
+   		    	}
+   		    } else if(this.deleteFlag === false){
+   		    	this.movedDistanceForY = this.curY - e.changedTouches[0].clientY;
+   		    } else {
+   		    	this.deleteFlag = false;
+   		    }
+			this.curY = e.changedTouches[0].clientY;
+			this.curX = e.changedTouches[0].clientX;
+		},
+		"touchend" : function(e){
+			cancelAnimationFrame(this.requestId);
+			if(this.deleteTodo !== null) this.deleteTodo.style.left = "0px";
+			this.movedDistanceForX = 0;
+			this.movedDistanceForY = 0;
+		},
+		getProperty : function(target, property) {
+			var style = window.getComputedStyle(target).getPropertyValue(property);
+			return parseInt(style);
+		},
+		moveDiv : function() {
+			var topValue = this.getProperty(this.container, "top");
+			if(topValue > 0) {
+				this.container.style.top = 0 + "px";
+				this.vail.style.display = "block";
+				cancelAnimationFrame(this.requestId);
+				return;
+			}
+			this.container.style.top = (topValue - this.movedDistanceForY) + "px";
+			if(this.deleteTodo !== null) {
+				var leftValue = this.getProperty(this.deleteTodo, "left");
+				if(leftValue - this.movedDistanceForX > 0) {
+					this.deleteTodo.style.left = (leftValue - this.movedDistanceForX) + "px";
+				}
+			}
+			this.requestId = requestAnimationFrame(this.moveDiv.bind(this)); 
+		},
+		addList : function(e) {
+			if(e.keyCode === this.ENTER) {
+				var insertString = this.getString(this.inputSection.value);
+				this.inputSection.insertAdjacentHTML('afterend', insertString);
+				this.container.style.top = "-55px";
+				document.querySelector("#content > input").value = "";
+				this.vail.style.display = "none";
+				var insertedTodo = document.querySelector("li:nth-child(2)");
+				this.changeOpacity(insertedTodo, "up");
+			}
+		},
+		changeOpacity : function(changeDiv, state) {	
+		changeDiv.offsetHeight;
+			if(state === "up") {
+				changeDiv.style.opacity = 1;
+			}else if(state === "down"){
+				changeDiv.style.opacity = 0;
+			}
+		},
+		getString : function(insertStr) {
+			var compiled =  _.template(document.querySelector("#templete").innerHTML);
+			return compiled({value : insertStr});
+		},
+		culculatingDegree : function(preX, preY, curX, curY) {
+			var conversionX = curX - preX;
+			var conversionY = curY - preY;
+			var innerProductValue = (conversionX*0 + conversionY*(-1))/Math.sqrt((conversionX*conversionX)+(conversionY*conversionY));
+			return Math.degrees(Math.acos(innerProductValue));
+		},
+		//삭제시에 에러메시지를 출력함
+		deleteLi : function(target) {
+			this.changeOpacity(target, "down");
+			this.deleteTodo.addEventListener("transitionend", function(e) {
+				this.container.removeChild(target);
+			}.bind(this), false);
+		}
+	};
+	Flicking.init();
+
+	
+
+	</script>
+</body>
 </html>
