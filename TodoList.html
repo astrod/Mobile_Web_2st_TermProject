@@ -46,14 +46,15 @@
 		height: 50px;
 		list-style: none;
 		opacity: 1;
-		-webkit-transition-property:opacity; 
+		-webkit-transition-property: -webkit-transform;
    		-webkit-transition-duration:1s;
-		transition-property:opacity;
+		transition-property:transform;
 		transition-duration:1s; 
 	}
 	input {
 		width : 100%;
 		height: 50px;
+		font-size: 20px;
 	}
 	.red{
 		background-color: red;
@@ -105,7 +106,7 @@
 
 
 	<script type="templete" id="templete">
-		<li class="gold" style="opacity : 0"> <%= value %> </li>
+		<li class="gold" style="-webkit-transform: rotateX(60deg)"> <%= value %> </li>
 	</script>
 
 	<script type="text/javascript">
@@ -192,6 +193,7 @@
 			if(topValue > 0) {
 				this.container.style.top = 0 + "px";
 				this.vail.style.display = "block";
+				document.querySelector("#content > input").focus();
 				cancelAnimationFrame(this.requestId);
 				return;
 			}
@@ -216,11 +218,11 @@
 			}
 		},
 		changeOpacity : function(changeDiv, state) {	
-		changeDiv.offsetHeight;
+			changeDiv.offsetHeight;
 			if(state === "up") {
-				changeDiv.style.opacity = 1;
+				changeDiv.style.webkitTransform = "rotateX(0deg)";
 			}else if(state === "down"){
-				changeDiv.style.opacity = 0;
+				changeDiv.style.webkitTransform = "rotateX(60deg)";
 			}
 		},
 		getString : function(insertStr) {
