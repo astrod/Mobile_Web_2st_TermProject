@@ -28,7 +28,7 @@
 		position: absolute;
 		width: 100%;
 		background-color: black;
-		top: 55px;
+		top: 53px;
 		z-index: 100;
 		display: none;
 		opacity: 0.5;
@@ -46,9 +46,9 @@
 		height: 50px;
 		list-style: none;
 		opacity: 1;
-		-webkit-transition-property: -webkit-transform;
+		-webkit-transition-property: -webkit-transform, opacity;
    		-webkit-transition-duration:1s;
-		transition-property:transform;
+		transition-property:transform, opacity;
 		transition-duration:1s; 
 	}
 	input {
@@ -125,7 +125,8 @@
 			this.vail = document.querySelector("#vail");
 			this.fittingContent(this.width, window.innerHeight);
 			this.eventBind();
-			this.deleteFlag = null;
+			this.Flag = null;
+			this.completeFlag = null;
 			this.startX = 0;
 			this.curY = 0;
 			this.curX = 0;
@@ -133,7 +134,7 @@
 			this.movedDistanceForX = 0;
 			this.movedDistanceForY = 0;
 			this.ENTER = 13;
-			this.deleteTodo = null;
+			this.selectedTodo = null;
 			this.inputSection = document.querySelector("#content > input");
 		},
 		"fittingContent" : function(width,height){
@@ -153,57 +154,91 @@
 			document.querySelector("#content > input").addEventListener("keydown", this.addList.bind(this));
 		},
 		"touchstart" : function(e){
+			console.log("touchStart");
 			this.startX = e.changedTouches[0].clientX;
 			this.curX = e.changedTouches[0].clientX; 
 			this.curY = e.changedTouches[0].clientY; 
 			this.requestId = requestAnimationFrame(this.moveDiv.bind(this));
 		},
 
-		//터치가 너무 예민함. 마우스로 해서 그런지 검증이 필요함. 서버에 올려놓고 테스트해야 함.
 		"touchmove" : function(e){
+			if(e.target.id === "content") return;
+			console.log("touchmove");
    		    e.preventDefault(); 
    		    var degree = this.culculatingDegree(this.curX, this.curY, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-   		    if(degree > 50 && degree < 130) {
-   		    	if(this.deleteFlag === null) this.deleteFlag = true;
-   		    	this.deleteTodo = e.target;
+   		    var totalDistance = this.startX - e.changedTouches[0].clientX;
+
+   		    //change deleteFlag null to true
+   		    if(degree > 50 && degree < 130 && (totalDistance < -30 || totalDistance > 30)) {
+   		    	if(this.Flag === null) this.Flag = true;
+   		    }
+
+   		    //change movedDistance using flag
+   		    if(this.Flag === true) {
+   		    	this.selectedTodo = e.target;
    		    	this.movedDistanceForX = this.curX - e.changedTouches[0].clientX;
-   		    	if((e.changedTouches[0].clientX - this.startX) > 150) {
+   		    	if(totalDistance < -200) {
    		    		this.deleteLi(e.target);
    		    	}
-   		    } else if(this.deleteFlag === false){
+   		    	if(totalDistance > 150) {
+   		    		this.completeTodo(e.target);
+   		    	}
+   		    } else if(this.Flag === null){
    		    	this.movedDistanceForY = this.curY - e.changedTouches[0].clientY;
-   		    } else {
-   		    	this.deleteFlag = false;
    		    }
 			this.curY = e.changedTouches[0].clientY;
 			this.curX = e.changedTouches[0].clientX;
 		},
 		"touchend" : function(e){
+			console.log("touchend");
 			cancelAnimationFrame(this.requestId);
-			if(this.deleteTodo !== null) this.deleteTodo.style.left = "0px";
-			this.movedDistanceForX = 0;
-			this.movedDistanceForY = 0;
+
+			//change flag value to null because don't delete targeted section 
+			if(this.selectedTodo !== null) {
+				this.selectedTodo.style.left = "0px";
+				this.Flag = null;
+			}
+
 		},
 		getProperty : function(target, property) {
 			var style = window.getComputedStyle(target).getPropertyValue(property);
 			return parseInt(style);
 		},
+		prepareInput : function() {
+			this.container.style.top = 0 + "px";
+			this.vail.style.display = "block";
+			document.querySelector("#content > input").focus();
+			cancelAnimationFrame(this.requestId);
+		},
+
 		moveDiv : function() {
 			var topValue = this.getProperty(this.container, "top");
+
+			//insert logic
 			if(topValue > 0) {
-				this.container.style.top = 0 + "px";
-				this.vail.style.display = "block";
-				document.querySelector("#content > input").focus();
-				cancelAnimationFrame(this.requestId);
+				this.prepareInput();
 				return;
 			}
-			this.container.style.top = (topValue - this.movedDistanceForY) + "px";
-			if(this.deleteTodo !== null) {
-				var leftValue = this.getProperty(this.deleteTodo, "left");
-				if(leftValue - this.movedDistanceForX > 0) {
-					this.deleteTodo.style.left = (leftValue - this.movedDistanceForX) + "px";
-				}
+			console.log(this.movedDistanceForY/10000);
+			if(topValue > -55 && topValue < -15) {
+				 this.container.style.top = (topValue - (this.movedDistanceForY/7)) + "px";
+			} else if(topValue >= -15) {
+				this.prepareInput();
+				return;			
+			} else {
+				this.container.style.top = (topValue - this.movedDistanceForY) + "px";
 			}
+
+			//delete logic
+			if(this.selectedTodo !== null) {
+				var leftValue = this.getProperty(this.selectedTodo, "left");
+				this.selectedTodo.style.left = (leftValue - this.movedDistanceForX) + "px";
+			}
+
+			//초기화 조건
+			this.movedDistanceForX = 0;
+			this.movedDistanceForY = 0;
+
 			this.requestId = requestAnimationFrame(this.moveDiv.bind(this)); 
 		},
 		addList : function(e) {
@@ -214,15 +249,15 @@
 				document.querySelector("#content > input").value = "";
 				this.vail.style.display = "none";
 				var insertedTodo = document.querySelector("li:nth-child(2)");
-				this.changeOpacity(insertedTodo, "up");
+				this.changeTransform(insertedTodo, "up");
 			}
 		},
-		changeOpacity : function(changeDiv, state) {	
+		changeTransform : function(changeDiv, state) {	
 			changeDiv.offsetHeight;
 			if(state === "up") {
 				changeDiv.style.webkitTransform = "rotateX(0deg)";
 			}else if(state === "down"){
-				changeDiv.style.webkitTransform = "rotateX(60deg)";
+				changeDiv.style.webkitTransform = "rotateX(90deg)";
 			}
 		},
 		getString : function(insertStr) {
@@ -237,11 +272,15 @@
 		},
 		//삭제시에 에러메시지를 출력함
 		deleteLi : function(target) {
-			this.changeOpacity(target, "down");
-			this.deleteTodo.addEventListener("transitionend", function(e) {
+			this.changeTransform(target, "down");
+			this.selectedTodo.addEventListener("transitionend", function(e) {
 				this.container.removeChild(target);
 			}.bind(this), false);
+		},
+		completeTodo : function(target) {
+			target.style.opacity = 0.4;
 		}
+
 	};
 	Flicking.init();
 
